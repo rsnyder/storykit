@@ -1,5 +1,9 @@
 # The Site Configuration
 
+# Fill in the protocol & hostname for your site.
+# E.g. 'https://username.github.io', note that it does not end with a '/'.
+url:   # the base hostname & protocol for your site
+
 # The base URL of your site
 baseurl: /storykit
 
@@ -24,10 +28,6 @@ tagline: A text-focused Jekyll theme with storytelling extensions # it will disp
 description: >- # used by seo meta and the atom feed
   A minimal, responsive and feature-rich Jekyll theme for interactive storytelling.
 
-# Fill in the protocol & hostname for your site.
-# E.g. 'https://username.github.io', note that it does not end with a '/'.
-url: https://rsnyder.github.io # the base hostname & protocol for your site
-
 github:
   username: # change to your GitHub username
 
@@ -37,7 +37,7 @@ twitter:
 social:
   # Change to your full name.
   # It will be displayed as the default author of the posts and the copyright owner in the Footer
-  name: Ron Snyder
+  name: Your Name
   email: example@domain.com # change to your email address
   links:
     # The first element serves as the copyright owner's link
@@ -98,7 +98,7 @@ theme_mode: # [light | dark]
 # will be added to all media resources (site avatar, posts' images, audio and video files) paths starting with '/'
 #
 # e.g. 'https://cdn.com'
-cdn: https://res.cloudinary.com/dmceci9t1/image/fetch/w_1200,c_limit
+cdn: 
 
 # the avatar on sidebar, support local or CORS resources
 avatar: /assets/img/logo.png
