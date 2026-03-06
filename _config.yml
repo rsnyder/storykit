@@ -1,5 +1,8 @@
 # The Site Configuration
 
+# The base URL of your site
+baseurl: /storykit
+
 # Import the theme
 theme: jekyll-theme-chirpy
 
@@ -148,9 +151,6 @@ pwa:
       # - "/example"  # URLs match `<SITE_URL>/example/*` will not be cached by the PWA
 
 paginate: 12
-
-# The base URL of your site
-baseurl: /storykit
 
 # ------------ The following options are not recommended to be modified ------------------
 
