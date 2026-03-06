@@ -2,7 +2,7 @@
 
 # Fill in the protocol & hostname for your site.
 # E.g. 'https://username.github.io', note that it does not end with a '/'.
-url:   # the base hostname & protocol for your site
+url: https://rsnyder.github.io  # the base hostname & protocol for your site
 
 # The base URL of your site
 baseurl: /storykit
