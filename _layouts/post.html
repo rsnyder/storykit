@@ -77,14 +77,11 @@ script_includes:
 
 </style>
 
-site.github.owner_name: {{ site.github.owner_name }} </br>
-site.github.repository_name: {{ site.github.repository_name }} </br>
-site.github.repository_url: {{ site.github.repository_url }} </br>
-site.github.project_title: {{ site.github.project_title }} </br>
-site.github.owner_url: {{ site.github.owner_url }} </br>
-site.github.url: {{ site.github.url }} </br>
-site.github.build_revision: {{ site.github.build_revision }} </br>
-site.github.source.branch: {{ site.github.source.branch }} </br>
+{% if site.github %}
+  <a href="{{ site.github.repository_url }}/blob/{{ site.github.source.branch }}/{{ page.path }}">
+    View source on GitHub
+  </a>
+{% endif %}
 
 {% include lang.html %}
 
