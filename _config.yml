@@ -59,6 +59,9 @@ webmaster_verifications:
 # ↑ --------------------------
 # The end of `jekyll-seo-tag` settings
 
+plugins:
+  - jekyll-github-metadata
+  
 # Web Analytics Settings
 analytics:
   google:
