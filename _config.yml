@@ -1,5 +1,7 @@
 # The Site Configuration
 
+repository: rsnyder/storykit
+
 # Fill in the protocol & hostname for your site.
 # E.g. 'https://username.github.io', note that it does not end with a '/'.
 url: https://rsnyder.github.io  # the base hostname & protocol for your site
@@ -61,7 +63,7 @@ webmaster_verifications:
 
 plugins:
   - jekyll-github-metadata
-  
+
 # Web Analytics Settings
 analytics:
   google:
