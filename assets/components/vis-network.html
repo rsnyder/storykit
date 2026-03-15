@@ -215,20 +215,11 @@
         id = eventData.id
         props.dataid = `${id}-csv`
         window.parent.postMessage({ type: 'getElementById', id: props.dataid }, '*')
-      } if (eventData.event === 'element' && eventData.html) {
-        // buildGraph(new DOMParser().parseFromString(eventData.html, 'text/html').querySelector('body').firstElementChild.textContent)
-        const doc = new DOMParser().parseFromString(eventData.html, 'text/html');
-        const rawText = doc.querySelector('body').firstElementChild.innerHTML;
-        // Decode HTML entities and restore line breaks
-        const csv = rawText
-          .replace(/<br\s*\/?>/gi, '\n')   // <br> tags → newlines (some renderers do this)
-          .replace(/&amp;/g, '&')
-          .replace(/&lt;/g, '<')
-          .replace(/&gt;/g, '>')
-          .replace(/&#10;/g, '\n')         // encoded newlines
-          .replace(/&#13;/g, '\r')
-          .trim();
-        buildGraph(csv);
+      } if (eventData.event === 'element') {
+        const csv = eventData.text  // prefer pre-extracted text
+          ?? new DOMParser().parseFromString(eventData.html, 'text/html')
+              .querySelector('body').firstElementChild.textContent;
+        buildGraph(csv.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim());
       }
     });
     if (props.dataid) {
