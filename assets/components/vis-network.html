@@ -185,7 +185,8 @@
     }
 
     const buildGraph = (csv) => {
-      console.log(csv);
+      const normalized = csv.replace(/\s([node|edge]),/g, '\n$1') // normalize line breaks
+      console.log(normalized);
       let nodes = []
       let edges = []
       const { data, errors } = Papa.parse(csv, {
@@ -215,11 +216,8 @@
         id = eventData.id
         props.dataid = `${id}-csv`
         window.parent.postMessage({ type: 'getElementById', id: props.dataid }, '*')
-      } if (eventData.event === 'element') {
-        const csv = eventData.text  // prefer pre-extracted text
-          ?? new DOMParser().parseFromString(eventData.html, 'text/html')
-              .querySelector('body').firstElementChild.textContent;
-        buildGraph(csv.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim());
+      } if (eventData.event === 'element' && eventData.html) {
+        buildGraph(new DOMParser().parseFromString(eventData.html, 'text/html').querySelector('body').firstElementChild.textContent)
       }
     });
     if (props.dataid) {
