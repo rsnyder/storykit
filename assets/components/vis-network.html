@@ -185,10 +185,14 @@
     }
 
     const buildGraph = (csv) => {
-      console.log(csv);
+      const normalized = csv
+        .replace(/\r\n/g, '\n')   // Windows CRLF → LF
+        .replace(/\r/g, '\n')     // old Mac CR → LF
+        .trim();
+      console.log(normalized);
       let nodes = []
       let edges = []
-      const { data, errors } = Papa.parse(csv, {
+      const { data, errors } = Papa.parse(normalized, {
         header: false,        // treat first row as keys
         dynamicTyping: true,  // convert "123" → 123
         skipEmptyLines: true,
