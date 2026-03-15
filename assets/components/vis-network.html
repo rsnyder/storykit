@@ -185,17 +185,18 @@
     }
 
     const buildGraph = (csv) => {
-      const normalized = csv.replace(/\s([node|edge]),/g, '\n$1') // normalize line breaks
+      const normalized = csv.replace(/\s+node,/g, '\nNODE,').replace(/\s+edge,/g, '\nEDGE,') // normalize line breaks
       console.log(normalized);
       let nodes = []
       let edges = []
-      const { data, errors } = Papa.parse(csv, {
+      const { data, errors } = Papa.parse(normalized, {
         header: false,        // treat first row as keys
         dynamicTyping: true,  // convert "123" → 123
         skipEmptyLines: true,
       });
       console.log(data);
       data.forEach(row => {
+        row[0] =row[0].toLowerCase();
         if (row[0] === 'node') nodes.push({ id: row[1], label: row[2], image: row[2] })
         else if (row[0] === 'edge') edges.push({ from: row[1], to: row[2], label: row[3] })
       })
