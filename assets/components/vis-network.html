@@ -185,14 +185,10 @@
     }
 
     const buildGraph = (csv) => {
-      const normalized = csv
-        .replace(/\r\n/g, '\n')   // Windows CRLF → LF
-        .replace(/\r/g, '\n')     // old Mac CR → LF
-        .trim();
-      console.log(normalized);
+      console.log(csv);
       let nodes = []
       let edges = []
-      const { data, errors } = Papa.parse(normalized, {
+      const { data, errors } = Papa.parse(csv, {
         header: false,        // treat first row as keys
         dynamicTyping: true,  // convert "123" → 123
         skipEmptyLines: true,
@@ -220,7 +216,19 @@
         props.dataid = `${id}-csv`
         window.parent.postMessage({ type: 'getElementById', id: props.dataid }, '*')
       } if (eventData.event === 'element' && eventData.html) {
-        buildGraph(new DOMParser().parseFromString(eventData.html, 'text/html').querySelector('body').firstElementChild.textContent)
+        // buildGraph(new DOMParser().parseFromString(eventData.html, 'text/html').querySelector('body').firstElementChild.textContent)
+        const doc = new DOMParser().parseFromString(eventData.html, 'text/html');
+        const rawText = doc.querySelector('body').firstElementChild.innerHTML;
+        // Decode HTML entities and restore line breaks
+        const csv = rawText
+          .replace(/<br\s*\/?>/gi, '\n')   // <br> tags → newlines (some renderers do this)
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&#10;/g, '\n')         // encoded newlines
+          .replace(/&#13;/g, '\r')
+          .trim();
+        buildGraph(csv);
       }
     });
     if (props.dataid) {
