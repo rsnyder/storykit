@@ -13,14 +13,7 @@ media_subpath: /assets/posts/monument-valley
 permalink: /monument-valley/
 toc: false
 published: true
-pin: true
-storykit:
-    toolbar: true
-    mode: flat # default layout style: flat or 2col
-    mode_toggle: true # Enable the toggle button to switch between 2col and flat styles
-    auto_float: true # auto float embeds
-    group_embeds: true # group adjacent embeds as tabs or carousels
-    wikidata_info_popups: true # show Wikidata-style info popups for links to Wikidata entities
+storykit: true
 ---
 
 **Monument Valley**, meaning "valley of the rocks", is a region of the Colorado Plateau characterized by a cluster of

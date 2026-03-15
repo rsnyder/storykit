@@ -15,8 +15,7 @@ from typing import List, Optional
 # Config: source repo + branch
 # ----------------------------
 SRC_USER = "rsnyder"
-SRC_REPO = "
-"
+SRC_REPO = "storykit-starter"
 SRC_BRANCH = "main"
 
 # Optional: GitHub token (env var) to avoid rate limits / access private repos
@@ -77,6 +76,8 @@ FILES_TO_SYNC = [
     "assets/posts/image-compare/Westgate_Towers_2021.jpg",
     "preview/index.html",
     "tools/sync_code.py",
+    "Gemfile",
+    ".github/workflows/pages-deploy.yml"
 ]
 
 
