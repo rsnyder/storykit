@@ -33,6 +33,11 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i
 
 {% include embed/image.html src="wc:Wegerich_Scheckenfalter_Duo_auf_Rotklee.jpg" %}
 
+## StoryKit Wikimedia Commons
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+
+{% include embed/image.html src="wc:Codex_Magliabechiano_%28folio_79r%29.jpg" %}
 
 # Maps
 
@@ -50,4 +55,8 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
-{% include embed/iframe.html src="https://cdn.knightlab.com/libs/timeline3/latest/embed/index.html?source=1N898HvO8a50-MMGVxGCR-MGbd6ftuk7b&timenav-position=bottom&hash-bookmark=false&initial-zoom=1" class="full"  caption="Caption with *italics* and **bold** formatting."  %}
+{% include embed/iframe.html src="https://cdn.knightlab.com/libs/timeline3/latest/embed/index.html?source=1N898HvO8a50-MMGVxGCR-MGbd6ftuk7b&timenav-position=bottom&hash-bookmark=false&initial-zoom=1" class="full" caption="Caption with *italics* and **bold** formatting."  %}
+
+# Iframe
+
+{% include embed/iframe.html src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Wegerich_Scheckenfalter_Duo_auf_Rotklee.jpg/1920px-Wegerich_Scheckenfalter_Duo_auf_Rotklee.jpg" caption="Caption with *italics* and **bold** formatting." aspect="0.5" %}
