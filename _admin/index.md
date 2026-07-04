@@ -36,9 +36,8 @@ The StoryKit documentation then shows you how to go beyond standard posts — ad
 * **[Map Viewer](storykit-map-viewer)** 
 * **[Image Compare Viewer](storykit-image-compare-viewer)**
 * **[YouTube Viewer](storykit-youtube-viewer)**
-* **[Network Viewer](storykit-vis-network-viewer)**
 
-A complete list of documents is found in the **[Guides](#guides)** section below.
+A complete list of documents is found in the **[All Guides](#all-guides)** section below.
 
 ## Who This Is For
 

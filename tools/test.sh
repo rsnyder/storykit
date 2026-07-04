@@ -60,10 +60,12 @@ main() {
   JEKYLL_ENV=production bundle exec jekyll b \
     -d "$SITE_DIR$_baseurl" -c "$_config"
 
-  # test
+  # test (keep flags in sync with .github/workflows/pages-deploy.yml)
   bundle exec htmlproofer "$SITE_DIR" \
     --disable-external \
-    --ignore-urls "/^http:\/\/127.0.0.1/,/^http:\/\/0.0.0.0/,/^http:\/\/localhost/"
+    --no-enforce-https \
+    --ignore-files "/assets\/components\//" \
+    --ignore-urls "/^Q[0-9]+$/,/\/(zoomto|flyto|playat|play|pause)\//,/^http:\/\/127.0.0.1/,/^http:\/\/0.0.0.0/,/^http:\/\/localhost/"
 }
 
 while (($#)); do
