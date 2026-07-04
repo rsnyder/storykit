@@ -837,10 +837,18 @@ const SELECTORS = {
     article: "article",
     header: "article > header",
     viewer: ".viewer",
-    step: ".col2 .post-content > p:not(:has(>img)), .col2 .post-content > blockquote, .col2 .float-pair > p",
+    // Narrative "steps" may be direct children of .post-content or live inside
+    // the <section> hierarchy built by restructureMarkdownToSections (which
+    // now runs in both display modes).
+    step: ".col2 .post-content > p:not(:has(>img)), .col2 .post-content section > p:not(:has(>img)), .col2 .post-content > blockquote, .col2 .post-content section > blockquote, .col2 .float-pair > p",
 };
 
-const scroller = scrollama();
+// Created lazily by init2col so pages that never enter two-column mode
+// don't instantiate scrollama at all.
+let scroller = null;
+// Aborts all listeners added by init2col; recreated on each init.
+let colAbort = null;
+let colInitialized = false;
 
 let els = {
     article: null,
@@ -868,40 +876,61 @@ function setActive(el) {
  * Walk backward from a step paragraph to find the nearest content element
  * that should be mirrored into the right viewer.
  *
- * Rules (matching your original):
- * - Use an IFRAME, OR
- * - Use an element with class "right"
+ * The walk is section-aware: when the siblings within the step's section
+ * are exhausted, it climbs to the parent <section> and keeps walking, and
+ * a preceding <section> is searched (deep) for its last viewer.
  */
-function findViewerSource(stepEl) {
-    let toMatch = ['IFRAME', 'SL-TAB-GROUP', 'FIGURE'];
+const VIEWER_TAGS = ['IFRAME', 'SL-TAB-GROUP', 'FIGURE'];
 
+function isViewerNode(node) {
+    if (!node || node.nodeType !== Node.ELEMENT_NODE) return false;
+    return (
+        VIEWER_TAGS.includes(node.nodeName) ||
+        (node.nodeName === 'P' && node.firstChild?.nodeName === 'IMG') ||
+        (node.nodeName === 'P' && node.firstChild?.nodeName === 'A' && node.firstChild.firstChild?.nodeName === 'IMG') ||
+        node.classList.contains('float-pair')
+    );
+}
+
+function viewerFrom(node) {
+    return node.classList.contains('float-pair')
+        ? node.querySelector('iframe, img') || node
+        : node;
+}
+
+/** Deep-search a container for its last mirrorable viewer element. */
+function lastViewerWithin(el) {
+    const list = el.querySelectorAll('iframe, sl-tab-group, figure, p > img');
+    if (!list.length) return null;
+    let last = list[list.length - 1];
+    if (last.tagName === 'IMG') last = last.closest('p') || last;
+    return last;
+}
+
+function findViewerSource(stepEl) {
     let node = stepEl?.previousElementSibling;
     if (node?.classList.contains('right') || node?.classList.contains('left')) return node;
 
+    // A viewer declared immediately after the step pairs with it.
     node = stepEl?.nextElementSibling;
     while (node?.nodeName === 'HR') node = node.nextElementSibling;
-    if (node?.nodeType === Node.ELEMENT_NODE && (
-        toMatch.includes(node?.nodeName) ||
-        (node?.nodeName === 'P' && node.firstChild?.nodeName === 'IMG') ||
-        (node?.nodeName === 'P' && node.firstChild?.nodeName === 'A' && node.firstChild.firstChild?.nodeName === 'IMG') ||
-        node?.classList.contains('float-pair')
-    )) {
-        return node.classList.contains('float-pair') ? node.querySelector('iframe, img') || node : node;
-    }
+    if (isViewerNode(node)) return viewerFrom(node);
 
-    node = stepEl?.previousElementSibling || null;
-    while (node?.nodeName === 'HR') node = node.previousElementSibling;
-    while (node) {
-        if (node.nodeType === Node.ELEMENT_NODE && (
-            toMatch.includes(node?.nodeName) ||
-            (node?.nodeName === 'P' && node.firstChild?.nodeName === 'IMG') ||
-            (node?.nodeName === 'P' && node.firstChild?.nodeName === 'A' && node.firstChild.firstChild?.nodeName === 'IMG') ||
-            node?.classList.contains('float-pair')
-        )) {
-            return node.classList.contains('float-pair') ? node.querySelector('iframe, img') || node : node;
+    // Otherwise walk backward: siblings first, then climb out of sections.
+    let scope = stepEl;
+    while (scope) {
+        node = scope.previousElementSibling;
+        while (node?.nodeName === 'HR') node = node.previousElementSibling;
+        while (node) {
+            if (isViewerNode(node)) return viewerFrom(node);
+            if (node.nodeName === 'SECTION') {
+                const within = lastViewerWithin(node);
+                if (within) return viewerFrom(within);
+            }
+            node = node.previousElementSibling;
         }
-
-        node = node.previousElementSibling;
+        const parent = scope.parentElement;
+        scope = parent && parent.nodeName === 'SECTION' ? parent : null;
     }
 }
 
@@ -992,7 +1021,8 @@ function handleStepEnter(response) {
 }
 
 function init2col() {
-    console.log("Initializing 2-column scrollytelling");
+    if (colInitialized) return; // idempotent: repeated mode toggles must not stack observers
+
     els.article = qs(SELECTORS.article);
     els.header = qs(SELECTORS.header);
     els.viewer = qs(SELECTORS.viewer);
@@ -1001,17 +1031,25 @@ function init2col() {
         // Fail quietly; this script may be used on pages without the 2-col layout.
         return;
     }
+    colInitialized = true;
 
-    // Position updates on scroll/resize
-    window.addEventListener("scroll", requestPositionUpdate, { passive: true });
-    window.addEventListener("resize", requestPositionUpdate);
+    // All listeners registered through one AbortController so teardown2col
+    // can remove them wholesale.
+    colAbort = new AbortController();
+    const { signal } = colAbort;
+    window.addEventListener("scroll", requestPositionUpdate, { passive: true, signal });
+    window.addEventListener("resize", requestPositionUpdate, { signal });
+    // If images/iframes load late and change layout, reposition.
+    window.addEventListener("load", requestPositionUpdate, { signal });
 
     // Initial position (next frame is usually better than setTimeout)
     requestPositionUpdate();
 
-    setActive(document.querySelector(SELECTORS.step))
-    updateViewerForStep(document.querySelector(SELECTORS.step));
+    const firstStep = document.querySelector(SELECTORS.step);
+    setActive(firstStep);
+    updateViewerForStep(firstStep);
 
+    scroller = scrollama();
     scroller
         .setup({
             step: SELECTORS.step,
@@ -1019,21 +1057,140 @@ function init2col() {
             debug: false,
         })
         .onStepEnter(handleStepEnter);
+}
 
-    // Optional: if images/iframes load late and change layout, reposition.
-    // (Cheap, but you can remove if unnecessary.)
-    window.addEventListener("load", requestPositionUpdate);
+/** Undo everything init2col set up, returning the page to flat-mode state. */
+function teardown2col() {
+    if (!colInitialized) return;
+    colInitialized = false;
+
+    colAbort?.abort();
+    colAbort = null;
+
+    try { scroller?.destroy(); } catch { /* scrollama throws if never set up */ }
+    scroller = null;
+
+    setActive(null);
+    lastSourceEl = null;
+    if (els.viewer) {
+        els.viewer.replaceChildren();
+        els.viewer.removeAttribute("style");
+    }
+    els = { article: null, header: null, viewer: null };
+}
+
+/* ---------------------------------------------
+ * Display-mode controller (single source of truth)
+ * ------------------------------------------- */
+
+const MODE_STORAGE_KEY = "postViewMode";
+let currentMode = null; // 'flat' | 'col2' once initStoryKit/setViewMode has run
+
+function normalizeMode(value) {
+    const v = String(value || "").toLowerCase();
+    if (v === "col2" || v === "2col") return "col2";
+    if (v === "flat" || v === "col1") return "flat";
+    return null;
+}
+
+/**
+ * Resolve the initial mode. Precedence: post front matter > the reader's
+ * remembered choice (only when the toggle is enabled) > site default > flat.
+ */
+function resolveInitialMode({ pageMode, siteMode, modeToggle = true } = {}) {
+    let saved = null;
+    if (modeToggle) {
+        try { saved = normalizeMode(localStorage.getItem(MODE_STORAGE_KEY)); } catch { /* storage blocked */ }
+    }
+    return normalizeMode(pageMode) || saved || normalizeMode(siteMode) || "flat";
+}
+
+/**
+ * Switch the page between flat and two-column display. Idempotent; the only
+ * place that toggles the col1/col2 classes, persists the reader's choice,
+ * and initializes/tears down scrollytelling. Fires "storykit:modechange"
+ * on window so UI (e.g. the toolbar toggle icon) can follow along.
+ */
+function setViewMode(mode, { persist = true } = {}) {
+    const wrapper = document.getElementById("main-wrapper");
+    if (!wrapper) return;
+
+    let effective = normalizeMode(mode) || "flat";
+    if (isMobile) effective = "flat"; // no room for two columns
+    if (effective === currentMode) return;
+    currentMode = effective;
+
+    const toCol2 = effective === "col2";
+    wrapper.classList.toggle("col2", toCol2);
+    wrapper.classList.toggle("col1", !toCol2);
+
+    if (toCol2) init2col();
+    else teardown2col();
+
+    if (persist && !isMobile) {
+        try { localStorage.setItem(MODE_STORAGE_KEY, toCol2 ? "col2" : "col1"); } catch { /* storage blocked */ }
+    }
+
+    window.dispatchEvent(new CustomEvent("storykit:modechange", { detail: { mode: effective } }));
+}
+
+function getViewMode() {
+    return currentMode;
+}
+
+/**
+ * Page bootstrap: the one entry point layouts call. Builds the section
+ * hierarchy (both display modes), applies the initial mode, and wires up
+ * the interactive features.
+ *
+ * @param {object} cfg
+ *   pageMode / siteMode  - storykit.mode from front matter / _config.yml
+ *   modeToggle           - whether the reader's toggle (and saved choice) applies
+ *   autoFloat, groupEmbeds, wikidataInfoPopups - feature flags (default true)
+ */
+function initStoryKit(cfg = {}) {
+    const contentEl = document.querySelector(".post-content");
+    if (contentEl) {
+        const restructured = restructureMarkdownToSections(contentEl);
+        if (restructured) contentEl.replaceWith(restructured);
+    }
+
+    // Wire interactive features before entering a display mode so that
+    // scrollytelling (if the initial mode is col2) sees the final DOM.
+    if (cfg.wikidataInfoPopups !== false) makeEntityPopups();
+    if (cfg.groupEmbeds !== false) wrapAdjacentEmbedsAsTabs();
+    addActionLinks();
+    if (cfg.autoFloat !== false && !isMobile) autoFloat();
+
+    setViewMode(resolveInitialMode(cfg), { persist: false });
 }
 
 
 /**
  * Restructure an HTML element (generated from Markdown) so that each heading
- * and its following content are wrapped in nested <section> elements according to heading level.
- * Additionally, any id, class, or style attributes applied to a heading (using Kramdown IAL syntax)
- * are transferred to the corresponding section.
+ * and its following content are wrapped in nested <section> elements according
+ * to heading level. Runs in BOTH display modes (flat and two-column); the
+ * scrollytelling selectors and viewer-source walk are section-aware.
  *
- * @param {element} contentEl - The HTML element from your Markdown.
- * @returns {element} - The new HTML element with nested sections.
+ * Behavior notes:
+ * - Heading attributes (id/class/style, plus click/href/target used by some
+ *   stories to make a whole section a link target) are MOVED from the heading
+ *   to its generated <section>. Kramdown's auto-generated heading ids therefore
+ *   become section ids, keeping anchors stable and linkable.
+ * - Sections that end up without an id (e.g. from hashtag-only pseudo-heading
+ *   paragraphs, which have no text for kramdown to slug) get a deterministic
+ *   fallback id "sk-section-<n>", numbered in document order, so action links
+ *   and navigation can always target them.
+ * - Skipped heading levels are tolerated: an h4 directly after an h2 nests one
+ *   level deeper (stack-based), it does not create empty intermediate sections.
+ * - Repeated heading text is safe: kramdown deduplicates auto ids (-1, -2 …)
+ *   before this code runs.
+ * - A paragraph containing only "#"/"##"… becomes a pseudo-heading of that
+ *   level; a paragraph containing only "^#"/"^##"… explicitly closes the
+ *   current section at that level without starting a new one.
+ *
+ * @param {Element} contentEl - The HTML element rendered from Markdown.
+ * @returns {Element} - A replacement element with the nested section tree.
  */
 const restructureMarkdownToSections = (contentEl) => {
     // Create a container element to hold the content.
@@ -1059,6 +1216,7 @@ const restructureMarkdownToSections = (contentEl) => {
     // Use a stack to keep track of the current section levels.
     // The stack starts with the container (level 0).
     const stack = [{ level: 0, element: container }];
+    let sectionAutoId = 0;
 
     // Get a static list of the container’s children.
     const nodes = Array.from(container.childNodes);
@@ -1096,6 +1254,10 @@ const restructureMarkdownToSections = (contentEl) => {
                     }
                 });
                 section.classList.add(`section${headingLevel}`)
+
+                // Guarantee a stable, targetable id even when the heading had
+                // none (hashtag-only pseudo-headings).
+                if (!section.id) section.id = `sk-section-${++sectionAutoId}`;
 
                 // Add "Back to top" link to section heading
                 // if (section.id) node.innerHTML = '<a href="#top" title="Back to top" style="font-size:80%; text-decoration: none;">⬆</a> ' + node.innerHTML
@@ -1148,4 +1310,15 @@ const restructureMarkdownToSections = (contentEl) => {
 /* ---------------------------------------------
  * Optional exports (if you import this elsewhere)
  * ------------------------------------------- */
-export { isMobile, autoFloat, makeEntityPopups, wrapAdjacentEmbedsAsTabs, addActionLinks, init2col, restructureMarkdownToSections };
+export {
+    isMobile,
+    autoFloat,
+    makeEntityPopups,
+    wrapAdjacentEmbedsAsTabs,
+    addActionLinks,
+    init2col,
+    restructureMarkdownToSections,
+    initStoryKit,
+    setViewMode,
+    getViewMode,
+};

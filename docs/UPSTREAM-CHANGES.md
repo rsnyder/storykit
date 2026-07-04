@@ -27,6 +27,15 @@ Update this file in every PR that touches a synced framework file.
 | `_admin/index.md` | Removed dead vis-network link (page recreated in docs overhaul); fixed `#guides` anchor |
 | `_admin/2019-08-08-write-a-new-post.md` | Fixed dead relative link (file deleted in docs overhaul anyway) |
 
+### Mode controller + section hardening (Phase 4)
+
+| File | Change |
+|---|---|
+| `assets/js/storykit.js` | Single display-mode controller (`initStoryKit`/`setViewMode`/`getViewMode`; precedence: post front matter > reader's saved choice > site default > flat; fires `storykit:modechange`); `init2col` is idempotent with a full `teardown2col` (AbortController-scoped listeners, `scroller.destroy()`, lazy scrollama creation); step selectors and `findViewerSource` are section-aware (fixes flat→col2 toggle yielding zero scroll steps); `restructureMarkdownToSections` now runs in both modes, documents its edge-case behavior, and guarantees stable section ids (`sk-section-<n>` fallback) |
+| `_layouts/post.html` | Competing inline mode module (duplicate localStorage read, class toggling, log-only MutationObserver) replaced by one `initStoryKit(...)` call |
+| `_includes/col2-toggle.html` | Reduced to a dumb button: calls `setViewMode`, follows `storykit:modechange` for its icon; no mode logic of its own |
+| `technical-overview.md` | Two-column behavior description reconciled with the implementation (paragraph steps + section-aware viewer lookup; centralized mode controller) — *not a synced file; update the equivalent doc upstream if one exists* |
+
 ### postMessage protocol unification (Phase 3)
 
 | File | Change |
