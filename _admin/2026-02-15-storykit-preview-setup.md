@@ -4,7 +4,7 @@ description: A guide for configuring the StoryKit Preview Tool.  The tool uses a
 permalink: /admin/storykit-preview-setup
 date: 2026-02-15
 toc: true
-order: 11
+order: 12
 storykit:
     mode: flat
     toolbar: false

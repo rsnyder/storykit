@@ -51,10 +51,6 @@ GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 # ----------------------------
 FILES_TO_SYNC = [
     "_admin/index.md",
-    "_admin/2019-08-08-text-and-typography.md",
-    "_admin/2019-08-08-write-a-new-post.md",
-    "_admin/2019-08-09-getting-started.md",
-    "_admin/2019-08-11-customize-the-favicon.md",
     "_admin/2026-02-15-storykit-overview.md",
     "_admin/2026-02-15-storykit-image-viewer.md",
     "_admin/2026-02-15-storykit-image-compare-viewer.md",
@@ -64,6 +60,12 @@ FILES_TO_SYNC = [
     "_admin/2026-02-15-storykit-preview-setup.md",
     "_admin/2026-02-15-storykit-entity-info-popups.md",
     "_admin/2026-02-15-storykit-formatting-tips.md",
+    "_admin/2026-02-15-storykit-viewers-overview.md",
+    "_admin/2026-02-15-storykit-vis-network-viewer.md",
+    "_admin/2026-02-15-storykit-iframe-viewer.md",
+    "_admin/2026-02-15-storykit-action-links.md",
+    "_admin/2026-02-15-storykit-display-modes.md",
+    "_admin/2026-02-15-storykit-troubleshooting.md",
     "_includes/embed/iframe.html",
     "_includes/embed/image-compare.html",
     "_includes/embed/image.html",
