@@ -27,6 +27,23 @@ Update this file in every PR that touches a synced framework file.
 | `_admin/index.md` | Removed dead vis-network link (page recreated in docs overhaul); fixed `#guides` anchor |
 | `_admin/2019-08-08-write-a-new-post.md` | Fixed dead relative link (file deleted in docs overhaul anyway) |
 
+### Dependency pinning, vendoring, Wikidata caching (Phase 6)
+
+| File | Change |
+|---|---|
+| `assets/js/storykit.js` | Shoelace imports pinned to 2.18.0; per-QID sessionStorage cache (24 h TTL) for entity-popup data — repeat page loads no longer re-query Wikidata/Wikipedia |
+| `_layouts/post.html` | Shoelace theme + autoloader pinned to 2.18.0 |
+| `assets/components/image-compare.html` | Shoelace 2.15.0 → 2.18.0 |
+| `assets/components/image.html` | OpenSeadragon 5.0.1 with SRI; marked pinned to 18.0.5 |
+| `assets/components/map.html` | Leaflet 1.9.4 js/css + leaflet-gesture-handling 1.2.2 + exif-js 2.3.0 with SRI; **@allmaps/leaflet pinned to 1.0.0-beta.44** (newest release still shipping the bundled build — the unversioned URL had silently broken when beta.45 dropped it); SmoothWheelZoom now vendored locally; Leaflet 0.7.7 marker images now vendored locally; marked pinned |
+| `assets/components/vis-network.html` | papaparse SRI; Shoelace pinned; marked pinned |
+| `assets/components/youtube.html` | marked pinned |
+| `preview/index.html` | LiquidJS/markdown-it/js-yaml/plugins pinned to exact versions |
+| `tools/check_consistency.py` | `SHOELACE_STRICT = True` — divergent/unversioned Shoelace now fails CI |
+| **New:** `assets/js/vendor/Leaflet.SmoothWheelZoom.js`, `assets/img/leaflet/marker-icon{,-2x}.png`, `marker-shadow.png`, `docs/dependencies.md` | Vendored fragile assets + full dependency inventory; vendored files added to `FILES_TO_SYNC` |
+
+SRI hashes were computed from npm tarballs (byte-identical to jsDelivr/unpkg). ES-module imports carry pins only (SRI not applicable).
+
 ### Shared embed builder + validation (Phase 5)
 
 | File | Change |

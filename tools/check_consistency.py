@@ -22,9 +22,9 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 
-# Flip to True once all Shoelace references are converged on a single pinned
-# version (dependency-pinning phase); until then multiple versions only warn.
-SHOELACE_STRICT = False
+# All Shoelace references are converged on a single pinned version; any
+# regression (new unversioned or divergent reference) fails CI.
+SHOELACE_STRICT = True
 
 # Directories that never contain framework source
 SKIP_DIRS = {".git", "_site", ".jekyll-cache", "node_modules", "vendor"}

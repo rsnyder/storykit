@@ -12,16 +12,16 @@
  */
 
 import "https://cdn.jsdelivr.net/npm/js-md5@0.8.3/src/md5.min.js";
-import "https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace/cdn/components/button/button.js";
-import "https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace/cdn/components/card/card.js";
-import "https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace/cdn/components/carousel/carousel.js";
-import "https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace/cdn/components/carousel-item/carousel-item.js";
-import "https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace/cdn/components/copy-button/copy-button.js";
-import "https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace/cdn/components/dialog/dialog.js";
-import "https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace/cdn/components/dropdown/dropdown.js";
-import "https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace/cdn/components/tab/tab.js";
-import "https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace/cdn/components/tab-group/tab-group.js";
-import "https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace/cdn/components/tab-panel/tab-panel.js";
+import "https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.18.0/cdn/components/button/button.js";
+import "https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.18.0/cdn/components/card/card.js";
+import "https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.18.0/cdn/components/carousel/carousel.js";
+import "https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.18.0/cdn/components/carousel-item/carousel-item.js";
+import "https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.18.0/cdn/components/copy-button/copy-button.js";
+import "https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.18.0/cdn/components/dialog/dialog.js";
+import "https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.18.0/cdn/components/dropdown/dropdown.js";
+import "https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.18.0/cdn/components/tab/tab.js";
+import "https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.18.0/cdn/components/tab-group/tab-group.js";
+import "https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.18.0/cdn/components/tab-panel/tab-panel.js";
 import "https://cdnjs.cloudflare.com/ajax/libs/scrollama/3.2.0/scrollama.min.js";
 
 /* ---------------------------------------------
@@ -618,11 +618,47 @@ function extractQidFromAnchor(a) {
     return q || null;
 }
 
+/* Entity data is cached per QID in sessionStorage so repeat page loads in a
+ * reading session don't re-query Wikidata/Wikipedia (rate-limit and latency
+ * resilience). Failures are non-fatal: uncached entities simply get no popup
+ * and the anchor stays a normal link. */
+const ENTITY_CACHE_PREFIX = "storykit:entity:";
+const ENTITY_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+function readEntityCache(qid) {
+    try {
+        const raw = sessionStorage.getItem(ENTITY_CACHE_PREFIX + qid);
+        if (!raw) return null;
+        const { t, e } = JSON.parse(raw);
+        if (!t || Date.now() - t > ENTITY_CACHE_TTL_MS) return null;
+        return e || null;
+    } catch {
+        return null;
+    }
+}
+
+function writeEntityCache(qid, entity) {
+    try {
+        sessionStorage.setItem(ENTITY_CACHE_PREFIX + qid, JSON.stringify({ t: Date.now(), e: entity }));
+    } catch {
+        /* storage full or blocked — cache is best-effort */
+    }
+}
+
 async function getEntityData(qids, language = "en") {
     const entities = {};
     if (!Array.isArray(qids) || qids.length === 0) return entities;
 
-    const entityUrls = qids.map((qid) => `(wd:${qid})`);
+    // Serve from cache where possible; only query Wikidata for the misses.
+    const misses = [];
+    for (const qid of qids) {
+        const cached = readEntityCache(qid);
+        if (cached) entities[qid] = cached;
+        else misses.push(qid);
+    }
+    if (!misses.length) return entities;
+
+    const entityUrls = misses.map((qid) => `(wd:${qid})`);
 
     // NOTE: you used SAMPLE(label/description) but filtered to "en" hard-coded.
     // If you actually want `language`, adjust FILTER(LANG(...) = "...") accordingly.
@@ -742,6 +778,11 @@ async function getEntityData(qids, language = "en") {
             }
         })
     );
+
+    // Cache the freshly fetched entities for the rest of the session.
+    for (const qid of misses) {
+        if (entities[qid]) writeEntityCache(qid, entities[qid]);
+    }
 
     return entities;
 }
