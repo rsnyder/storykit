@@ -27,6 +27,16 @@ Update this file in every PR that touches a synced framework file.
 | `_admin/index.md` | Removed dead vis-network link (page recreated in docs overhaul); fixed `#guides` anchor |
 | `_admin/2019-08-08-write-a-new-post.md` | Fixed dead relative link (file deleted in docs overhaul anyway) |
 
+### Shared embed builder + validation (Phase 5)
+
+| File | Change |
+|---|---|
+| `_includes/embed/_iframe.html` | **New** shared iframe emitter: consistent id/class/title/sizing attributes; emits `data-storykit-warn="no-id"` when a viewer has no id (**add to `FILES_TO_SYNC` upstream**) |
+| `_includes/embed/{image,map,youtube,image-compare,vis-network,iframe}.html` | All six delegate emission to the shared partial; query-string values escaped per-value with `cgi_escape` (replaces image.html's bespoke `uri_escape`+`%26`/`%2B` double-encode; **fixes captions containing `&` being silently truncated**); map omits empty `center=`; map now actually forwards its documented `src` layer param; image-compare honors `class` (previously silently dropped) and accepts alignment params appended with `&` or `?`; iframe.html dead `qs` code removed and gains a `title` |
+| `assets/js/storykit.js` | `addActionLinks` diagnostics: one `console.warn` listing action-link targets that don't exist on the page; one `console.info` when embeds lack ids |
+
+Verified by decode-equivalence check across all 16 built pages with iframes: every component query string parses identically before/after except the two known caption-`&` truncation fixes.
+
 ### Mode controller + section hardening (Phase 4)
 
 | File | Change |

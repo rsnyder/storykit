@@ -463,6 +463,14 @@ function parseActionLink(a) {
 function addActionLinks({ root = document.body } = {}) {
     const iframes = Array.from(root.querySelectorAll("iframe")).filter((i) => i.id);
 
+    // Diagnostics: embeds rendered without an id (embed/_iframe.html marks
+    // them) can never be targeted by action links — surface once, quietly.
+    const noId = root.querySelectorAll('[data-storykit-warn="no-id"]');
+    if (noId.length) {
+        console.info(`StoryKit: ${noId.length} viewer embed(s) on this page have no id attribute; ` +
+            `action links cannot target them. Add id="..." to the include if you need to.`);
+    }
+
     if (!iframes.length) return;
 
     // Index iframes by id for quick lookup
@@ -470,6 +478,7 @@ function addActionLinks({ root = document.body } = {}) {
 
     // Process each <a> once (avoid nested loops)
     const links = Array.from(root.querySelectorAll("a"));
+    const unboundTargets = [];
 
     for (const a of links) {
         // Avoid double-binding
@@ -500,6 +509,7 @@ function addActionLinks({ root = document.body } = {}) {
         const iframe = iframeById.get(target);
         if (!iframe) {
             a.classList.add("disabled");
+            unboundTargets.push(target);
             continue;
         }
 
@@ -546,6 +556,12 @@ function addActionLinks({ root = document.body } = {}) {
                 payload: { action: ds.action, args: parsedArgs, label: ds.label }
             }, location.origin);
         });
+    }
+
+    if (unboundTargets.length) {
+        const ids = [...new Set(unboundTargets)].join('", "');
+        console.warn(`StoryKit: ${unboundTargets.length} action link(s) reference viewer id(s) "${ids}" ` +
+            `that don't exist on this page — check that each targeted viewer include has a matching id attribute.`);
     }
 }
 

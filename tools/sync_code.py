@@ -66,6 +66,7 @@ FILES_TO_SYNC = [
     "_admin/2026-02-15-storykit-action-links.md",
     "_admin/2026-02-15-storykit-display-modes.md",
     "_admin/2026-02-15-storykit-troubleshooting.md",
+    "_includes/embed/_iframe.html",
     "_includes/embed/iframe.html",
     "_includes/embed/image-compare.html",
     "_includes/embed/image.html",
