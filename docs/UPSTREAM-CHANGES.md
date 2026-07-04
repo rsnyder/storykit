@@ -27,6 +27,17 @@ Update this file in every PR that touches a synced framework file.
 | `_admin/index.md` | Removed dead vis-network link (page recreated in docs overhaul); fixed `#guides` anchor |
 | `_admin/2019-08-08-write-a-new-post.md` | Fixed dead relative link (file deleted in docs overhaul anyway) |
 
+### postMessage protocol unification (Phase 3)
+
+| File | Change |
+|---|---|
+| `assets/js/storykit.js` | One `storykit:*` envelope for all messages; origin check on by default (`location.origin`); deleted dead `setAspect`/`openLink` handlers; action links send a real args array (JSON in `data-args`), null-guard their target with a `console.warn` naming the missing id, and use `currentTarget` (child-element clicks no longer break) |
+| `assets/components/image.html` | Uses shared runtime (`StoryKit.onAction`/`showDialog`); removed bespoke message parsing |
+| `assets/components/map.html` | Fixed broken `showDialog` shape (`props:{}` wrapper the host never read); restored the expand button (markup + handler, hidden in max mode); `flyto` via `StoryKit.onAction`; removed bespoke parsing |
+| `assets/components/youtube.html` | Uses shared runtime; protocol comments updated; removed bespoke parsing |
+| `assets/components/image-compare.html` | `storykit:height` via `StoryKit.reportHeight` (replaces `image-compare:height`); dialog via runtime |
+| `assets/components/vis-network.html` | Unguarded `JSON.parse` replaced with runtime promise helpers (`getHostId`/`requestHostElement`) incl. retry for the host-not-yet-listening race; warns instead of silently failing when the data block is missing |
+
 ### Documentation overhaul (Phase 2)
 
 | File | Change |
@@ -49,6 +60,8 @@ Update this file in every PR that touches a synced framework file.
 | `.ruby-version` | Single source of truth for the Ruby version (local + CI) |
 | `tools/check_consistency.py` | CI checks: preview CHIRPY_VERSION vs Gemfile.lock, Shoelace version convergence, sync-manifest validity |
 | `docs/UPSTREAM-CHANGES.md` | This manifest |
+| `assets/js/storykit-component.js` | Shared component runtime: enveloped messaging, origin checks, safe parsing, dialog/height/request helpers (**add to `FILES_TO_SYNC` upstream**) |
+| `docs/postmessage-protocol.md` | Maintainer spec of the unified protocol |
 | `_admin/2026-02-15-storykit-viewers-overview.md` | One-page tour of all viewers + common attribute pattern (order 20) |
 | `_admin/2026-02-15-storykit-vis-network-viewer.md` | Network viewer reference incl. the `<id>-csv` data-block convention (order 25) — fixes the dead link previously in index.md |
 | `_admin/2026-02-15-storykit-iframe-viewer.md` | Generic iframe embed reference (order 26) |

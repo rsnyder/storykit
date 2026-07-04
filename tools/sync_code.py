@@ -92,6 +92,7 @@ FILES_TO_SYNC = [
     "assets/components/youtube.html",
     "assets/css/storykit.css",
     "assets/js/storykit.js",
+    "assets/js/storykit-component.js",
     "assets/img/devices-mockup.png",
     "assets/img/devtools-dark.png",
     "assets/img/devtools-light.png",

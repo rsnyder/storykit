@@ -212,9 +212,15 @@
 
       <figcaption>
         <span class="title caption-title"></span>
+        <button id="expandBtn" class="expand-btn" type="button" title="Expand map" aria-label="Expand map">
+          <i class="fa-solid fa-expand" aria-hidden="true"></i>
+        </button>
       </figcaption>
     </figure>
   </main>
+
+  <!-- StoryKit component runtime (postMessage protocol) -->
+  <script src="../js/storykit-component.js"></script>
 
   <!-- Leaflet core + plugins (global) -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -270,24 +276,21 @@
     const captionTitleEl = document.querySelector("figcaption .title");
     const coordsEl = document.querySelector("#coords");
     const mapEl = document.querySelector("#map");
-    // const expandBtn = document.querySelector("#expandBtn");
+    const expandBtn = document.querySelector("#expandBtn");
 
     // ------------------------------ expand button ---------------------------
-    function postShowDialog() {
-      console.log('showDialog')
-      // Keep aspect stable and simple per your request
-      window.parent.postMessage(
-        { type: "showDialog", props: { aspect: 1.0, src: `${location.href}` } },
-        "*"
-      );
+    const isMaxMode = new URLSearchParams(location.search).has("max");
+    if (isMaxMode) {
+      // Already in the expanded dialog — no point offering to expand again.
+      expandBtn.style.display = "none";
+    } else {
+      expandBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const sep = location.search ? "&" : "?";
+        StoryKit.showDialog(`${location.href}${sep}max`, 1.0);
+      });
     }
-    /*
-    expandBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      postShowDialog();
-    });
-    */
 
     // ------------------------------ utilities ------------------------------
     const isQid = (s) => typeof s === "string" && /^Q\d+$/.test(s.trim());
@@ -911,28 +914,13 @@
     }
 
     // ------------------------------ messaging ------------------------------
-    function parseMessageData(event) {
-      const raw = event?.data;
-      if (!raw) return null;
-      if (typeof raw === "string") {
-        try { return JSON.parse(raw); } catch { return null; }
-      }
-      if (typeof raw === "object") return raw;
-      return null;
-    }
-
     function setupFlyToMessaging({ map, getEntity }) {
       let prior = null;
       let lastTargetKey = null;
 
-      window.addEventListener("message", async (event) => {
-        const msg = parseMessageData(event);
-        if (!msg) return;
-
-        const action = String(msg.action || "").toLowerCase();
+      StoryKit.onAction(async ({ action, args }) => {
         if (action !== "flyto") return;
 
-        const args = Array.isArray(msg.args) ? msg.args : [];
         const locZoom = String(args[0] ?? "").trim();
         if (!locZoom) return;
 

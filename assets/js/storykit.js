@@ -38,9 +38,11 @@ const isMobile = isCoarsePointer || isNarrowViewport;
 // If true, action links are disabled (no href + styled as plain text)
 const isStatic = false;
 
-// If you can, set this to your domain(s) to reject arbitrary postMessage senders.
-// Example: new Set([location.origin])
-const allowedMessageOrigins = null; // null = allow all (current behavior)
+// Origins accepted for postMessage. Components are always same-origin
+// (static pages served by this site), so default to our own origin.
+// Set to null to allow all origins (not recommended), or add origins for
+// unusual embedding setups.
+const allowedMessageOrigins = new Set([location.origin]);
 
 /* ---------------------------------------------
  * Small utilities
@@ -175,79 +177,65 @@ function findIframeBySourceWindow(sourceWindow) {
     return null;
 }
 
+// Tolerant parse: accepts plain objects or JSON strings, never throws.
+function safeParseMessage(data) {
+    if (!data) return null;
+    if (typeof data === "object") return data;
+    if (typeof data !== "string") return null;
+    try { return JSON.parse(data); } catch { return null; }
+}
+
+/**
+ * Host side of the StoryKit postMessage protocol.
+ * All messages use the envelope { type: "storykit:<name>", payload: {...} }
+ * — see docs/postmessage-protocol.md.
+ */
 function addMessageHandler() {
     window.addEventListener("message", (event) => {
         if (!isOriginAllowed(event.origin)) return;
 
-        const data = event.data;
+        const msg = safeParseMessage(event.data);
+        if (!msg || typeof msg.type !== "string" || !msg.type.startsWith("storykit:")) return;
 
-        // Accept either raw objects OR JSON strings (some of your code uses JSON.stringify elsewhere)
-        let msg = data;
-        if (typeof data === "string") {
-            try {
-                msg = JSON.parse(data);
-            } catch {
-                // not JSON; ignore
+        const name = msg.type.slice("storykit:".length);
+        const payload = msg.payload || {};
+        const reply = (type, replyPayload) =>
+            event.source?.postMessage({ type: `storykit:${type}`, payload: replyPayload }, event.origin);
+
+        switch (name) {
+            case "showDialog":
+                showDialog(payload);
+                return;
+
+            case "height": {
+                const h = Number(payload.height);
+                if (!Number.isFinite(h) || h <= 0) return;
+                const sendingIframe = findIframeBySourceWindow(event.source);
+                if (sendingIframe) sendingIframe.style.height = h + "px";
                 return;
             }
-        }
 
-        if (!msg || typeof msg !== "object") return;
-
-        if (msg.type === "setAspect") {
-            const sendingIframe = findIframeBySourceWindow(event.source);
-            if (sendingIframe) {
-                sendingIframe.style.aspectRatio = String(parseAspect(msg.aspect, 1));
-            }
-            return;
-        }
-
-        if (msg.type === "showDialog") {
-            showDialog(msg);
-            return;
-        }
-
-        if (msg.type === "openLink") {
-            const url = safeURL(msg.url);
-            if (!url) return;
-            window.open(url.toString(), msg.newtab ? "_blank" : "_self");
-            return;
-        }
-
-        if (msg.type === 'getId') {
-            // if (event.origin !== location.origin) return;
-            const iframes = document.querySelectorAll('iframe');
-            for (const iframe of iframes) {
-                if (iframe.contentWindow === event.source) {
-                    let msg = { event: 'id', id: iframe.id || iframe.getAttribute('data-id') }
-                    event.source.postMessage(JSON.stringify(msg), '*')
-                    break;
+            case "getId": {
+                const sendingIframe = findIframeBySourceWindow(event.source);
+                if (sendingIframe) {
+                    reply("id", { id: sendingIframe.id || sendingIframe.getAttribute("data-id") });
                 }
+                return;
             }
-            return;
-        }
 
-        if (msg.type === 'getElementById') {
-            // if (event.origin !== location.origin) return;
-            let el = document.getElementById(event.data.id)
-            event.source.postMessage(JSON.stringify({
-                event: 'element',
-                html: el ? el.outerHTML : null,
-                text: el ? el.textContent : null
-            }), '*')
-            return;
-        }
-
-        if (msg.type === "image-compare:height") {
-            const h = msg.height;
-            if (typeof h !== "number" || h <= 0) return;
-            const sendingIframe = findIframeBySourceWindow(event.source);
-            if (sendingIframe) {
-                sendingIframe.style.height = h + "px";
+            case "getElementById": {
+                const el = document.getElementById(payload.id);
+                reply("element", {
+                    id: payload.id,
+                    html: el ? el.outerHTML : null,
+                    text: el ? el.textContent : null
+                });
+                return;
             }
-            return;
-        }
 
+            default:
+                console.debug(`StoryKit: ignoring unknown message type storykit:${name}`);
+        }
     });
 }
 
@@ -531,7 +519,9 @@ function addActionLinks({ root = document.body } = {}) {
             a.setAttribute("data-action", action);
             a.setAttribute("data-target", target);
             a.setAttribute("data-label", parsed.label);
-            a.setAttribute("data-args", args);
+            // args may themselves contain commas (regions, coordinates), so
+            // store the array as JSON rather than a joined string.
+            a.setAttribute("data-args", JSON.stringify(args));
         }
 
         a.classList.add("trigger");
@@ -540,9 +530,21 @@ function addActionLinks({ root = document.body } = {}) {
 
         a.addEventListener("click", (e) => {
             e.preventDefault();
-            const msg = { event: "action", action: e.target.dataset.action, text: e.target.dataset.label, args: [e.target.dataset.args] }
-            let target = document.querySelector(`.col2 [data-id="${e.target.dataset.target}"]`) || document.getElementById(e.target.dataset.target);
-            target.contentWindow?.postMessage(JSON.stringify(msg), "*");
+            const ds = e.currentTarget.dataset;
+            let parsedArgs;
+            try { parsedArgs = JSON.parse(ds.args); } catch { parsedArgs = [ds.args]; }
+            const targetEl =
+                document.querySelector(`.col2 [data-id="${ds.target}"]`) ||
+                document.getElementById(ds.target);
+            if (!targetEl || !targetEl.contentWindow) {
+                console.warn(`StoryKit: action link target "${ds.target}" not found — ` +
+                    `check that a viewer include on this page has id="${ds.target}"`);
+                return;
+            }
+            targetEl.contentWindow.postMessage({
+                type: "storykit:action",
+                payload: { action: ds.action, args: parsedArgs, label: ds.label }
+            }, location.origin);
         });
     }
 }
