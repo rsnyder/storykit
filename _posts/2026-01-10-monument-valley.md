@@ -13,7 +13,6 @@ media_subpath: /assets/posts/monument-valley
 permalink: /monument-valley/
 toc: false
 published: true
-storykit: true
 ---
 
 **Monument Valley**, meaning "valley of the rocks", is a region of the Colorado Plateau characterized by a cluster of
@@ -45,9 +44,7 @@ Park](map/flyto/Q223969,12) and the [Grand Canyon](map/flyto/Q118841,12).
     center="Q192017"
     zoom="5"
     caption="Monument Valley"
-    markers="Q118841~National_Parks|
-    Q777183~National_Parks|
-    Q223969~National_Parks"
+    markers="Q192017~Monument Valley|Q118841~National Parks|Q777183~National Parks|Q223969~National Parks"
 %}
 
 The buttes arising from the valley floor are clearly stratified, with three principal layers. The lowest layer is the
