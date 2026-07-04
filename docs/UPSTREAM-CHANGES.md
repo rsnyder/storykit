@@ -27,6 +27,13 @@ Update this file in every PR that touches a synced framework file.
 | `_admin/index.md` | Removed dead vis-network link (page recreated in docs overhaul); fixed `#guides` anchor |
 | `_admin/2019-08-08-write-a-new-post.md` | Fixed dead relative link (file deleted in docs overhaul anyway) |
 
+### Preview tool reliability (Phase 7)
+
+| File | Change |
+|---|---|
+| `preview/index.html` | `?dev[=<origin>]` mode loads site assets (storykit.js/css, viewer components) from a local Jekyll server instead of the deployed site, making JS/CSS edits visible in preview during framework development; limitations documented in the header comment. (`collapseMultilineTags` was verified already whitespace-tolerant — no change needed.) |
+| `_admin/2026-02-15-storykit-preview-setup.md` | New "What the Preview Can and Can't Show" section (markdown-engine caveat, single-page build, GitHub lag, committed-content-only, dev mode note) |
+
 ### Dependency pinning, vendoring, Wikidata caching (Phase 6)
 
 | File | Change |
