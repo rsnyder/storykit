@@ -65,6 +65,7 @@ jobs:
           bundle exec htmlproofer "_site${{ steps.pages.outputs.base_path }}" \
             --disable-external \
             --no-enforce-https \
+            --swap-urls "^${{ steps.pages.outputs.base_path }}/:/" \
             --ignore-files "/assets\/components\//" \
             --ignore-urls "/^Q[0-9]+$/,/\/(zoomto|flyto|playat|play|pause)\//,/^http:\/\/127\.0\.0\.1/,/^http:\/\/0\.0\.0\.0/,/^http:\/\/localhost/"
 
