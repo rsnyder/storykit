@@ -41,7 +41,7 @@ SRC_USER = "rsnyder"
 SRC_REPO = "storykit-starter"
 # Pinned commit of storykit-starter that this repo was last baselined to.
 # Bump deliberately (see module docstring), never point back at a branch name.
-SRC_REF = "2df0913fc0221dd07764b40f1111781efa3da6b6"
+SRC_REF = "749fb8ac90b5efc0d12210fee3052dc800aa75ed"
 
 # Optional: GitHub token (env var) to avoid rate limits / access private repos
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
@@ -109,6 +109,30 @@ FILES_TO_SYNC = [
     "assets/posts/image-compare/Westgate_Towers_c1905.jpg",
     "assets/posts/image-compare/Westgate_Towers_2021.jpg",
     "preview/index.html",
+    "assets/js/skrender.js",
+    # ── StoryKit editor (added 2026-07-08). NOTE: preview/index.html now
+    #    REQUIRES assets/js/skrender.js from the same ref. ────────────────
+    "_admin/2026-07-06-storykit-authoring-a-visual-narrative.md",
+    "editor/app.js",
+    "editor/commands.js",
+    "editor/conflict.js",
+    "editor/context.js",
+    "editor/dnd.js",
+    "editor/doclist.js",
+    "editor/editor.js",
+    "editor/github.js",
+    "editor/index.html",
+    "editor/lang-storykit.js",
+    "editor/palette.js",
+    "editor/preview.js",
+    "editor/statusbar.js",
+    "editor/store.js",
+    "editor/styles.css",
+    "editor/sync.js",
+    "editor/toolbar.js",
+    "editor/url-grammars.js",
+    "editor/viewer-catalog.js",
+    "editor/wikidata.js",
     "tools/sync_code.py",
     "Gemfile",
     ".github/workflows/pages-deploy.yml",
@@ -182,7 +206,17 @@ def summarize_diff(rel: str, local: bytes, remote: bytes, max_lines: int = 10) -
 
 def run(repo_root: Path, ref: str, apply: bool, verbose: bool) -> Result:
     result = Result()
+    # Detect whether we're running INSIDE the canonical repo itself: its
+    # working tree is by definition ahead of any pinned SRC_REF, and this
+    # file cannot contain its own future commit hash, so self-comparison
+    # would report permanent phantom drift. Skip self for --check in the
+    # canonical repo; downstream copies still compare and sync everything.
+    in_canonical = (repo_root / "docs" / "editor-plan.md").exists() and \
+                   (repo_root / "tests" / "render" / "corpus.json").exists()
     for rel in FILES_TO_SYNC:
+        if rel == "tools/sync_code.py" and in_canonical and not apply:
+            result.unchanged.append(rel)
+            continue
         target = repo_root / rel
         try:
             remote_data = fetch(raw_url(rel, ref), GITHUB_TOKEN)
