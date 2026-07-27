@@ -33,6 +33,7 @@ Update this file in every PR that touches a synced framework file.
 |---|---|
 | `preview/index.html` | `?dev[=<origin>]` mode loads site assets (storykit.js/css, viewer components) from a local Jekyll server instead of the deployed site, making JS/CSS edits visible in preview during framework development; limitations documented in the header comment. (`collapseMultilineTags` was verified already whitespace-tolerant — no change needed.) |
 | `_admin/2026-02-15-storykit-preview-setup.md` | New "What the Preview Can and Can't Show" section (markdown-engine caveat, single-page build, GitHub lag, committed-content-only, dev mode note) |
+| `assets/js/skrender.js` | Tag-error reporting fixed and made author-facing: LiquidJS line numbers are counted from the post body, so they were short by the front-matter length (a typo on file line 81 reported as line 67) — new `describeLiquidError()` shifts them into file coordinates (leaving `file:`-scoped errors from includes/layouts alone) and restates the known LiquidJS phrasings in plain language ("`{% inlcude %}` isn't a known tag — check the spelling") instead of "Liquid error in post body (rendered raw)". Raised from `warn` to `error` (first `error`-level diagnostic — the author must fix it for the page to render anywhere). Diagnostics gained an optional `detail` field carrying the original error text |
 
 ### Dependency pinning, vendoring, Wikidata caching (Phase 6)
 
